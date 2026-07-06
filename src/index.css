@@ -1,0 +1,231 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────────────────
+   THEME TOKENS
+   Dark (default) = "Formula 1" — deep blacks, electric brand blue, AMD red.
+   Light (.light) = "Academic" — warm paper, ink-navy text, slate borders.
+   Components funnel through .card / .btn-* / .input / .label / body, so
+   flipping these variables reskins the whole app.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:            #030712; /* gray-950 */
+  --surface:       #111827; /* gray-900 — cards */
+  --surface-2:     #1f2937; /* gray-800 — buttons/inputs */
+  --surface-3:     #374151; /* gray-700 — hover/borders */
+  --border:        #1f2937; /* gray-800 */
+  --border-strong: #374151; /* gray-700 */
+  --text:          #f3f4f6; /* gray-100 */
+  --text-muted:    #9ca3af; /* gray-400 */
+  --text-faint:    #6b7280; /* gray-500 */
+  --heading:       #ffffff;
+  --grid-rgb:      239, 68, 68; /* AMD red grid lines */
+}
+
+html.light {
+  --bg:            #f5f3ee; /* warm paper */
+  --surface:       #fffdf8; /* ivory card */
+  --surface-2:     #ece8df; /* parchment button */
+  --surface-3:     #ddd7ca; /* hover */
+  --border:        #e2dcd0; /* soft slate-tan */
+  --border-strong: #cabfa9;
+  --text:          #232a36; /* ink navy */
+  --text-muted:    #5b6472; /* slate */
+  --text-faint:    #8a8578; /* faded ink */
+  --heading:       #1a2230; /* deep navy heading */
+  --grid-rgb:      99, 102, 241; /* indigo grid lines — calmer, academic */
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    @apply antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  html.light body {
+    font-family: Georgia, 'Times New Roman', 'Iowan Old Style', serif;
+  }
+  html.light h1, html.light h2, html.light h3 {
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    @apply rounded-xl p-5;
+  }
+  .btn-primary {
+    @apply bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    background-color: var(--surface-2);
+    color: var(--text);
+    @apply font-medium px-4 py-2 rounded-lg transition-colors;
+  }
+  .btn-secondary:hover { background-color: var(--surface-3); }
+  .input {
+    background-color: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    @apply w-full rounded-lg px-4 py-2.5 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition;
+  }
+  /* Locked-by-demo look: unmistakably "you can't edit this because a preset
+     applies" — dimmed, dashed amber border, not-allowed cursor. */
+  .input:disabled,
+  select.input:disabled,
+  textarea.input:disabled {
+    @apply opacity-60 cursor-not-allowed;
+    border-style: dashed;
+    border-color: rgba(245, 158, 11, 0.4);
+    background-color: rgba(245, 158, 11, 0.04);
+  }
+  .label {
+    color: var(--text-muted);
+    @apply block text-sm font-medium mb-1.5;
+  }
+}
+
+/* LIGHT-MODE UTILITY OVERRIDES — remap common dark utilities to academic tokens */
+/* Backgrounds */
+html.light .bg-gray-950, html.light .bg-gray-900 { background-color: var(--surface) !important; }
+html.light .bg-gray-800 { background-color: var(--surface-2) !important; }
+html.light .bg-gray-700 { background-color: var(--surface-3) !important; }
+
+/* Text */
+html.light .text-white, html.light .text-gray-100, html.light .text-gray-50 { color: var(--heading) !important; }
+html.light .text-gray-200, html.light .text-gray-300 { color: var(--text) !important; }
+html.light .text-gray-400, html.light .text-gray-500 { color: var(--text-muted) !important; }
+html.light .text-gray-600 { color: var(--text-faint) !important; }
+
+/* Borders */
+html.light .border-gray-800, html.light .border-gray-700 { border-color: var(--border) !important; }
+
+/* Sticky header → frosted paper in academic mode */
+html.light .lf-header { background-color: rgba(255, 253, 248, 0.9) !important; }
+
+/* Hero panel → refined parchment "journal cover" in academic mode */
+html.light .lf-hero {
+  background: linear-gradient(135deg, #fffdf8 0%, #f3efe6 55%, #eae4d7 100%) !important;
+  border-color: var(--border-strong) !important;
+}
+
+/* Telemetry cards inside the hero → crisp white "lab instrument" panels */
+html.light .lf-metric {
+  background-color: #ffffff !important;
+  border-color: #d8d1c2 !important;
+  box-shadow: 0 1px 2px rgba(40, 35, 25, 0.05) !important;
+  backdrop-filter: none !important;
+}
+html.light .lf-metric-track { background-color: #e7e1d4 !important; }
+/* Card label icons: drop the loud red, use ink */
+html.light .lf-metric .text-red-400 { color: #5b6472 !important; }
+
+/* Theme-conditional visibility helpers (must beat Tailwind lg:block) */
+.lf-light-only { display: none !important; }
+html.light .lf-dark-only { display: none !important; }
+@media (min-width: 1024px) {
+  html.light .lf-light-only { display: block !important; }
+}
+
+/* Brand text stays readable on light bg */
+html.light .text-brand-400 { color: #2742d8 !important; }
+
+/* Soften the loud F1 red accents into a scholarly burgundy */
+html.light .text-red-400 { color: #9b1c2e !important; }
+
+@layer utilities {
+  /* Hide scrollbar on horizontally-scrolling chip rows */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* ── Animated GPU grid backdrop ──────────────────────────────────────────── */
+  .gpu-grid {
+    background-image:
+      linear-gradient(rgba(var(--grid-rgb), 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--grid-rgb), 0.06) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 80% 60% at 70% 0%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 70% 0%, #000 30%, transparent 75%);
+  }
+  html.light .gpu-grid {
+    background-image:
+      linear-gradient(rgba(var(--grid-rgb), 0.10) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--grid-rgb), 0.10) 1px, transparent 1px);
+  }
+
+  /* Slow drifting glow blobs */
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes float-glow {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+    50%      { transform: translate(20px, -16px) scale(1.12); opacity: 0.85; }
+  }
+  .animate-float-glow { animation: float-glow 9s ease-in-out infinite; }
+  .animate-float-glow-slow { animation: float-glow 14s ease-in-out infinite; }
+
+  /* Sweeping shimmer line across the hero */
+  @keyframes sweep {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(220%); }
+  }
+  .animate-sweep { animation: sweep 6s linear infinite; }
+
+  /* Soft entrance — fade + rise */
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-rise-in { animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Live counter pulse for the "rendering" dot */
+  @keyframes ping-soft {
+    0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+    70%  { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+  .animate-ping-soft { animation: ping-soft 2s ease-out infinite; }
+
+  /* Active-stage connector: a STEADY gradient that's dim at Start and bright
+     at the candidate node (so the line reads as "building toward" it), with a
+     soft sheen that drifts along it — no width reset, no flashing. */
+  .pipeline-gradient {
+    background-image: linear-gradient(90deg,
+      rgba(96,165,250,0.25) 0%,
+      rgba(96,165,250,0.55) 55%,
+      rgba(147,197,253,1) 100%);
+  }
+  @keyframes pipeline-sheen {
+    0%   { transform: translateX(-60%); }
+    100% { transform: translateX(260%); }
+  }
+  .animate-pipeline-sheen {
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(219,234,254,0.85) 50%,
+      rgba(255,255,255,0) 100%);
+    width: 40%;
+    animation: pipeline-sheen 1.8s linear infinite;
+  }
+
+  /* Gentle gradient shift for the headline accent */
+  @keyframes hue-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  .animate-hue-shift {
+    background-size: 200% auto;
+    animation: hue-shift 5s ease-in-out infinite;
+  }
+
+  .delay-75  { animation-delay: 0.075s; }
+  .delay-150 { animation-delay: 0.15s; }
+  .delay-300 { animation-delay: 0.3s; }
+  .delay-500 { animation-delay: 0.5s; }
+}

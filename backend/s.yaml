@@ -1,0 +1,56 @@
+# Serverless Devs config — one-command deploy of the LessonForge AI Showrunner
+# backend to Alibaba Cloud Function Compute (FC 3.0, custom runtime web function).
+#
+# Prereqs (once):
+#   npm i -g @serverless-devs/s
+#   s config add            # paste your Alibaba Cloud AccessKey ID + Secret
+#
+# Deploy:
+#   cd backend
+#   export DASHSCOPE_API_KEY=sk-...        # your Model Studio (DashScope) key
+#   s deploy -y
+#
+# After deploy, Serverless Devs prints the function's public HTTP URL.
+# Put that URL into the app's Settings → "Alibaba Cloud backend URL".
+# Verify:  curl <url>/healthz   → { ok: true, keyPresent: true, ... }
+
+edition: 3.0.0
+name: lessonforge-showrunner
+access: default            # the alias from `s config add`
+
+vars:
+  region: ap-southeast-1   # Singapore (International) — matches the DashScope intl endpoints
+
+resources:
+  backend:
+    component: fc3
+    props:
+      region: ${vars.region}
+      functionName: lessonforge-showrunner
+      description: LessonForge AI Showrunner — Qwen + Wan proxy
+      runtime: custom.debian10
+      # Custom runtime web function: FC sends HTTP straight to our server,
+      # which listens on $FC_SERVER_PORT (index.mjs already reads that).
+      customRuntimeConfig:
+        command:
+          - node
+          - index.mjs
+        port: 9000
+      cpu: 0.5
+      memorySize: 1024
+      diskSize: 512
+      timeout: 300          # Wan create/poll can take a couple of minutes
+      instanceConcurrency: 5
+      codeUri: ./
+      environmentVariables:
+        # Injected from your shell at deploy time — never committed.
+        DASHSCOPE_API_KEY: ${env('DASHSCOPE_API_KEY')}
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          triggerConfig:
+            authType: anonymous      # public endpoint the frontend can call
+            methods:
+              - GET
+              - POST
+              - OPTIONS

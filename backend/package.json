@@ -1,0 +1,14 @@
+{
+  "name": "lessonforge-showrunner-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LessonForge AI Showrunner backend — Qwen + Wan proxy for Alibaba Cloud Function Compute",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
