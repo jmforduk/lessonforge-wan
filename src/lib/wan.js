@@ -69,7 +69,7 @@ export function stripRenderedText(text) {
 }
 
 // ── Duration (voiceover-driven, clamped to Wan's supported range) ─────────────
-export const MAX_RENDER_SECONDS = 15  // wan2.7 supports [2s, 15s]
+export const MAX_RENDER_SECONDS = 10  // wan2.5-preview / 2.6 accept fixed tiers 5 & 10 only (15 is wan2.7-only and gets rejected)
 export const MIN_RENDER_SECONDS = 5   // clean floor; Wan supports 5/10/15 tiers best
 const WORDS_PER_SECOND = 2.5
 const TAIL_PAD = 0.6
@@ -85,8 +85,9 @@ function shotSeconds(shot) {
   const words = countWords(shot?.voiceover || shot?.voiceoverScript)
   const target = words ? words / WORDS_PER_SECOND + TAIL_PAD : parseDurationSeconds(shot?.duration)
   const clamped = Math.max(MIN_RENDER_SECONDS, Math.min(target, MAX_RENDER_SECONDS))
-  // Wan is happiest at its named tiers.
-  return clamped <= 7 ? 5 : clamped <= 12 ? 10 : 15
+  // wan2.5-preview / 2.6 accept ONLY the fixed tiers 5 and 10 (15 is wan2.7-only
+  // and is rejected as 'duration is not supported'). Snap to the nearest legal tier.
+  return clamped <= 7 ? 5 : 10
 }
 
 // ── Educator identity → prompt (no faceswap; Wan speaks + keeps ref look) ─────
