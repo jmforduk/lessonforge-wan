@@ -490,9 +490,15 @@ function buildWanBody(shot, educator, { sceneOnly = false, model = DEFAULT_T2V_M
   // then leans on the qwen-image-edit locked still + strong descriptor prompts.
   // Only a FINAL render (finalRender:true) switches to the PAID i2v path, which
   // anchors the exact approved still as the first frame — spend it on keepers only.
+  // RENDER MUST MATCH REVIEW: animate the APPROVED still as the i2v first frame so
+  // the final clip IS the look you signed off — not a fresh t2v invention. i2v now
+  // has FREE quota (wan2.5-i2v-preview), so this is the DEFAULT for any presenter
+  // clip with a usable reference (no longer gated on finalRender). The reference
+  // MUST be an absolute http(s) or data: URL — a relative/bundled path can't be
+  // fetched by DashScope, so it's rejected here (caller inlines it first).
   const reference = (!sceneOnly && (refImage || educator?.portrait)) || null
-  if (finalRender && reference && /^(https?:\/\/|data:image\/)/.test(reference)) {
-    body.model = safeModel('i2v', model || DEFAULT_I2V_MODEL)   // FREE wan2.5-i2v-preview (img_url first-frame); Settings can override
+  if (reference && /^(https?:\/\/|data:image\/)/.test(reference)) {
+    body.model = safeModel('i2v', DEFAULT_I2V_MODEL)   // FREE wan2.5-i2v-preview (img_url first-frame); Settings can override
     body.input.img_url = reference
   }
   return { body, secs }
@@ -522,7 +528,8 @@ export async function renderShot(shot, educator, lessonSlug, backendBase, onStat
   // clip and use its first frame as the preview still. Keeps the two-stage gate.
   // Consistency reference: prefer the APPROVED review still (opts.refImage /
   // shot.reviewStill), else the educator portrait (handled inside buildWanBody).
-  const refImage = opts.refImage || shot.reviewStill || shot.approvedStill || null
+  let refImage = opts.refImage || shot.reviewStill || shot.approvedStill || null
+  refImage = await resolvePortrait(refImage)   // inline relative/bundled refs so i2v can use them
   const { body, secs } = buildWanBody(shot, educator, { sceneOnly: shotIsSceneOnly, refImage, finalRender: !!opts.finalRender })
   if (imageOnly) body.parameters.duration = MIN_RENDER_SECONDS
 
