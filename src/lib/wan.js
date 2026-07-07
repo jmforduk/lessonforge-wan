@@ -286,19 +286,28 @@ function buildImageEditBody(shot, educator, refImage) {
   const subject = educator?.isRobot ? 'robot/character' : 'person'
   const wardrobe = (educator?.wardrobe || '').trim()
   const wardrobeClause = wardrobe ? ` They are wearing exactly: ${wardrobe}.` : ''
-  const keep = `Preserve the EXACT same ${subject} from the reference image with 100% identity fidelity — do not change the face, head shape, features, colours or proportions in any way. This is the same individual, not a look-alike.`
+  // KEEP THE EDIT MINIMAL. qwen-image-edit preserves identity best when it is asked
+  // to change as LITTLE as possible. If we ask it to re-pose the head, swap to a
+  // studio, add key light AND drop the subject into a full new scene, the large
+  // transformation makes it REGENERATE the face — it keeps the demographic it reads
+  // (ethnicity/age/skin) but loses the exact person. So: hold the subject as-is,
+  // only change the background/context, and never re-pose or re-light the face.
+  const keep = `This is a photo of a specific real person. Keep this person's face, head, hair and expression EXACTLY as in the reference image, pixel-for-pixel — same identity, same features, same face shape, same everything. Do NOT redraw, restyle, re-pose, re-age or beautify the face. Treat the face as fixed and untouchable.`
   let instruction
   if (isSplit) {
-    instruction = `${keep} Re-frame them as a head-and-shoulders talking-head portrait on a clean neutral studio backdrop, soft key light, facing camera.${wardrobeClause} Alone in frame, no second subject, no scenery behind, no graphics. Photorealistic, cinematic.${NO_ONSCREEN_TEXT_CLAUSE}`
+    // Minimal: keep the subject as shot, only clean/neutralise the background.
+    instruction = `${keep} Change ONLY the background behind them to a clean, softly-lit neutral studio backdrop, keeping the person's head, face, framing and pose unchanged.${wardrobeClause} Keep exactly one person in frame — do not add anyone. Photorealistic.${NO_ONSCREEN_TEXT_CLAUSE}`
   } else {
     const sceneSource = shot.videoPrompt || shot.scenePrompt || shot.title || ''
     const sceneClean = stripRenderedText(sanitiseVisualPrompt(sceneSource))
-    instruction = `${keep} Place this same individual, unchanged, as the ONLY person into the following setting (the setting is background only — any people mentioned in it are replaced by this one individual, do not add anyone else): ${sceneClean}.${wardrobeClause} Exactly one person in the whole frame, centered, facing camera, no second person anywhere. Photorealistic, cinematic.${NO_ONSCREEN_TEXT_CLAUSE}`
+    // Minimal: keep the person exactly as-is, change ONLY the surroundings behind
+    // them. Do not re-pose, re-centre or re-light the subject.
+    instruction = `${keep} Change ONLY the background/surroundings behind this same unchanged person to: ${sceneClean}. Keep the person's face, head, pose, size and position in the frame exactly as in the reference — only the environment behind them changes.${wardrobeClause} Keep exactly one person; if the setting mentions other people, do not add them. Photorealistic.${NO_ONSCREEN_TEXT_CLAUSE}`
   }
   return {
     model: safeModel('edit', DEFAULT_EDIT_MODEL),
     input: { messages: [ { role: 'user', content: [ { image: refImage }, { text: instruction } ] } ] },
-    parameters: { n: 1, negative_prompt: presenterNeg(shot, educator, 'second subject, duplicate, crowd, scenery clutter'), prompt_extend: false, watermark: false, size: isSplit ? '768*1024' : '1280*720' },
+    parameters: { n: 1, negative_prompt: presenterNeg(shot, educator, 'second subject, duplicate, crowd, scenery clutter'), prompt_extend: false, watermark: false, size: '768*1024' },  // portrait-ish for both — re-composing to landscape pushes edit toward regenerating the face
   }
 }
 
