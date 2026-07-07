@@ -213,12 +213,12 @@ export const DEFAULT_STILL_MODEL = 'qwen-image'    // FREE quota (async, verifie
 
 // Video models (DashScope Wan). These are the ones VERIFIED to SUCCEED on the
 // video-synthesis endpoint with audio/dubbing:
-//   • i2v (reference image)  → wan2.6-i2v-flash  (img_url; fast ~50s; auto-dub)
-//   • t2v (no reference)     → wan2.5-t2v-preview
+//   • i2v (reference image)  → wan2.5-i2v-preview (FREE 45/50; auto-dub)
+//   • t2v (no reference)     → wan2.5-t2v-preview (FREE 35/50)
 // NB: wan2.7-i2v FAILS here (needs a different media[] shape) and wan2.2-i2v-plus
 // is silent + was failing — do not use them for the presenter/narrated clips.
-export const DEFAULT_I2V_MODEL = 'wan2.6-i2v-flash'
-export const DEFAULT_T2V_MODEL = 'wan2.6-t2v'        // FREE quota (50).
+export const DEFAULT_I2V_MODEL = 'wan2.5-i2v-preview'  // FREE quota (45/50 remaining, verified on Vision dashboard)
+export const DEFAULT_T2V_MODEL = 'wan2.5-t2v-preview' // FREE quota (35/50 remaining). wan2.6-t2v pool exhausted.
 
 // ── COST GUARD ───────────────────────────────────────────────────────────────
 // Julian was billed ~$18 by the pricey wan2.7-t2v / wan2.7-i2v models (which
@@ -228,12 +228,12 @@ export const DEFAULT_T2V_MODEL = 'wan2.6-t2v'        // FREE quota (50).
 const ALLOWED_MODELS = {
   // FREE-QUOTA-FIRST. The Singapore workspace free grant covers ONLY these codes:
   //   still/image: wan2.6-image (50), qwen-image (99)
-  //   t2v:         wan2.6-t2v (50)
-  //   edit:        qwen-image-edit (100), qwen-image-edit-plus (100)
-  //   i2v:         (NONE — no free image-to-video model exists in the grant)
+  //   t2v:         wan2.5-t2v-preview (35/50 free) — wan2.6-t2v pool exhausted
+  //   i2v:         wan2.5-i2v-preview (45/50 free) — Vision dashboard confirms free grant
+  //   edit:        qwen-image-edit (68/100), qwen-image-edit-plus
   // Non-free codes are still allowed (verified to work) but bill Pay-As-You-Go,
   // so keep them for FINAL approved clips only.
-  i2v:   new Set(['wan2.6-i2v-flash', 'wan2.5-i2v-preview']),            // PAID (no free i2v)
+  i2v:   new Set(['wan2.5-i2v-preview', 'wan2.6-i2v-flash']),            // wan2.5-i2v-preview = FREE (45/50); flash = PAID fallback
   t2v:   new Set(['wan2.6-t2v', 'wan2.5-t2v-preview', 'wan2.6-t2v-flash']), // wan2.6-t2v = FREE
   still: new Set(['wan2.6-image', 'qwen-image', 'wan2.2-t2i-flash']),   // wan2.6-image/qwen-image = FREE
   edit:  new Set(['qwen-image-edit', 'qwen-image-edit-plus']),          // both FREE
@@ -449,7 +449,7 @@ function buildWanBody(shot, educator, { sceneOnly = false, model = DEFAULT_T2V_M
   // anchors the exact approved still as the first frame — spend it on keepers only.
   const reference = (!sceneOnly && (refImage || educator?.portrait)) || null
   if (finalRender && reference && /^(https?:\/\/|data:image\/)/.test(reference)) {
-    body.model = safeModel('i2v', null)   // PAID wan2.6-i2v-flash (img_url first-frame)
+    body.model = safeModel('i2v', model || DEFAULT_I2V_MODEL)   // FREE wan2.5-i2v-preview (img_url first-frame); Settings can override
     body.input.img_url = reference
   }
   return { body, secs }
