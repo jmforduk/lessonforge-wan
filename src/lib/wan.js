@@ -274,6 +274,33 @@ async function postImageEdit(backend, body) {
   return data.imageUrl
 }
 
+// Ensure the reference portrait is something DashScope can actually fetch.
+// qwen-image-edit needs either an absolute http(s) URL or a base64 data URL.
+// Bundled/seeded educator portraits resolve to a RELATIVE path
+// (e.g. /assets/raj_sterling-xxxx.png) which Alibaba's servers can't reach — that
+// silently failed the edit and dropped us to a random-face t2i fallback. So here
+// we inline any non-absolute, non-data portrait to a base64 data URL first.
+async function resolvePortrait(portrait) {
+  if (!portrait) return null
+  if (/^data:/i.test(portrait)) return portrait                 // already inline
+  if (/^https?:\/\//i.test(portrait)) return portrait          // already absolute
+  // relative path (bundled asset) — fetch it from our own origin and inline it
+  try {
+    const url = portrait.startsWith('/') ? (location.origin + portrait) : portrait
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return await new Promise((resolve) => {
+      const fr = new FileReader()
+      fr.onload = () => resolve(fr.result)
+      fr.onerror = () => resolve(null)
+      fr.readAsDataURL(blob)
+    })
+  } catch (e) {
+    console.warn('could not inline portrait for identity lock:', e.message)
+    return null
+  }
+}
+
 // Build the qwen-image-edit request: reference image (portrait) + instruction.
 function buildImageEditBody(shot, educator, refImage) {
   const isSplit = shot.layout === 'split'
@@ -374,16 +401,21 @@ export async function renderStill(shot, educator, lessonSlug, backendBase, onSta
   // a reference portrait, generate the still with qwen-image-edit so it's the
   // SAME subject as the portrait — this stops Nova (and any character) drifting
   // between shots. Falls back to plain text-to-image if edit fails or no portrait.
-  const refPortrait = (!shotIsSceneOnly && educator?.portrait) ? educator.portrait : null
-  let imageUrl, task
+  const rawPortrait = (!shotIsSceneOnly && educator?.portrait) ? educator.portrait : null
+  const refPortrait = await resolvePortrait(rawPortrait)   // inline bundled/relative portraits
+  let imageUrl, task, lockError = null
   if (refPortrait) {
     try {
       onStatus?.('generating', 'Locking character to portrait…')
       imageUrl = await postImageEdit(backend, buildImageEditBody(shot, educator, refPortrait))
       task = 'edit'
     } catch (e) {
+      lockError = e.message
       console.warn('image-edit lock failed, falling back to t2i:', e.message)
     }
+  } else if (rawPortrait) {
+    lockError = 'portrait could not be loaded for the identity lock'
+    console.warn(lockError)
   }
   let identityLocked = !!(refPortrait && task === 'edit')
   if (!imageUrl) {
@@ -396,6 +428,7 @@ export async function renderStill(shot, educator, lessonSlug, backendBase, onSta
   const result = {
     promptId: task,
     identityLocked,
+    lockError: identityLocked ? null : lockError,
     sceneImage: imageUrl,
     faceswapImage: imageUrl,
     video: null,
