@@ -626,7 +626,11 @@ export default function App() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center">3</span>
-                  <span className="text-sm text-gray-200">Choose the <span className="font-semibold text-brand-300">“Immune System”</span> sample, then watch the plan, previews and finished clips.</span>
+                  <span className="text-sm text-gray-200">Choose the <span className="font-semibold text-brand-300">“Immune System”</span> sample, then review the plan and preview stills.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center">4</span>
+                  <span className="text-sm text-gray-200">Hit <span className="font-semibold text-amber-300">Approve all</span> in the Editing Suite to render, then watch the finished clips.</span>
                 </li>
               </ol>
 
