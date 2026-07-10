@@ -109,6 +109,8 @@ export default function App() {
   const [lessonSubTab, setLessonSubTab]     = useState('library')
   const [demoMode, setDemoMode]             = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('lf_theme') || 'dark')
+  const [cueDismissed, setCueDismissed] = useState(() => localStorage.getItem('lf_cue_dismissed') === '1')
+  const dismissCue = () => { setCueDismissed(true); localStorage.setItem('lf_cue_dismissed', '1') }
   const [playerLesson, setPlayerLesson] = useState(null) // lesson currently open in the player
 
   const [educators, setEducators]             = useState([])
@@ -652,6 +654,60 @@ export default function App() {
       )}
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-8">
+
+        {/* ── One-off welcome cue card — points new users straight at the
+            fastest way to see the product work: Demo Mode + Immune System sample.
+            Dismisses permanently (localStorage lf_cue_dismissed). ── */}
+        {activeTab === 'home' && !demoMode && !cueDismissed && (
+          <div className="relative rounded-2xl border border-brand-500/40 bg-gradient-to-br from-brand-500/15 via-gray-900 to-gray-950 p-5 sm:p-6 shadow-lg">
+            <button
+              onClick={dismissCue}
+              aria-label="Dismiss"
+              className="absolute top-3 right-3 text-gray-500 hover:text-white text-lg leading-none w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center"
+            >×</button>
+
+            <div className="flex items-start gap-4">
+              <div className="hidden sm:flex w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/40 items-center justify-center text-xl shrink-0">👋</div>
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-white">New here? See it work in 10 seconds — no setup, no API key.</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  The quickest way to understand LessonForge is to watch a finished lesson it built. Do this:
+                </p>
+
+                <ol className="mt-3 space-y-1.5 text-sm text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">1</span>
+                    <span>Turn on <span className="font-semibold text-amber-300">Demo Mode</span> (top-right toggle — or just tap the button below).</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">2</span>
+                    <span>Open <span className="font-semibold text-white">Create Lesson</span> and pick the <span className="font-semibold text-brand-300">“Immune System”</span> sample.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">3</span>
+                    <span>Watch the plan, previews and finished clips — all pre-loaded, nothing to wait for.</span>
+                  </li>
+                </ol>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => { if (!demoMode) handleToggleDemo(); dismissCue() }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors"
+                  >
+                    Turn on Demo Mode →
+                  </button>
+                  <button
+                    onClick={dismissCue}
+                    className="text-sm font-medium text-gray-400 hover:text-gray-200"
+                  >
+                    I&rsquo;ll explore on my own
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Home */}
         {activeTab === 'home' && (
