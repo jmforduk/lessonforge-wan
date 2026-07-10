@@ -109,8 +109,9 @@ export default function App() {
   const [lessonSubTab, setLessonSubTab]     = useState('library')
   const [demoMode, setDemoMode]             = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('lf_theme') || 'dark')
-  const [cueDismissed, setCueDismissed] = useState(() => localStorage.getItem('lf_cue_dismissed') === '1')
-  const dismissCue = () => { setCueDismissed(true); localStorage.setItem('lf_cue_dismissed', '1') }
+  const [showCue, setShowCue] = useState(() => localStorage.getItem('lf_seen_cue_v2') !== '1')
+  const dismissCue = () => { setShowCue(false); localStorage.setItem('lf_seen_cue_v2', '1') }
+  const startDemoFromCue = () => { if (!demoMode) handleToggleDemo(); setActiveTab('lessons'); setLessonSubTab('suite'); dismissCue() }
   const [playerLesson, setPlayerLesson] = useState(null) // lesson currently open in the player
 
   const [educators, setEducators]             = useState([])
@@ -591,6 +592,57 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+
+      {/* ── First-run welcome cue (modal overlay). Shows once — lf_seen_cue_v2.
+          Guides new users: Demo Mode → Dr. Sarah Chen → Immune System. ── */}
+      {showCue && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+             onClick={dismissCue}>
+          <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-gray-950 shadow-2xl overflow-hidden"
+               onClick={e => e.stopPropagation()}>
+            <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-4 flex items-center gap-3">
+              <span className="text-2xl">👋</span>
+              <div>
+                <h2 className="text-lg font-bold text-white leading-tight">Welcome — see it work in 10 seconds</h2>
+                <p className="text-xs text-amber-200/80 mt-0.5">No setup, no API key needed.</p>
+              </div>
+              <button onClick={dismissCue} aria-label="Close"
+                className="ml-auto text-gray-400 hover:text-white text-xl leading-none w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center">×</button>
+            </div>
+
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-400">The fastest way to understand LessonForge is to watch a lesson it already built. Just:</p>
+
+              <ol className="mt-4 space-y-3">
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center">1</span>
+                  <span className="text-sm text-gray-200">Turn on <span className="font-semibold text-amber-300">Demo Mode</span> (top-right — or use the button below).</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center">2</span>
+                  <span className="text-sm text-gray-200">In <span className="font-semibold text-white">Create Lesson</span>, pick the educator <span className="font-semibold text-brand-300">Dr. Sarah Chen</span>.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 w-6 h-6 shrink-0 rounded-full bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center">3</span>
+                  <span className="text-sm text-gray-200">Choose the <span className="font-semibold text-brand-300">“Immune System”</span> sample, then watch the plan, previews and finished clips.</span>
+                </li>
+              </ol>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
+                <button onClick={startDemoFromCue}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
+                  Start the demo →
+                </button>
+                <button onClick={dismissCue}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors">
+                  Explore on my own
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header
         onSettings={() => setShowSettings(true)}
         demoMode={demoMode}
@@ -654,60 +706,6 @@ export default function App() {
       )}
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 space-y-8">
-
-        {/* ── One-off welcome cue card — points new users straight at the
-            fastest way to see the product work: Demo Mode + Immune System sample.
-            Dismisses permanently (localStorage lf_cue_dismissed). ── */}
-        {activeTab === 'home' && !demoMode && !cueDismissed && (
-          <div className="relative rounded-2xl border border-brand-500/40 bg-gradient-to-br from-brand-500/15 via-gray-900 to-gray-950 p-5 sm:p-6 shadow-lg">
-            <button
-              onClick={dismissCue}
-              aria-label="Dismiss"
-              className="absolute top-3 right-3 text-gray-500 hover:text-white text-lg leading-none w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center"
-            >×</button>
-
-            <div className="flex items-start gap-4">
-              <div className="hidden sm:flex w-11 h-11 rounded-xl bg-brand-500/20 border border-brand-500/40 items-center justify-center text-xl shrink-0">👋</div>
-              <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-bold text-white">New here? See it work in 10 seconds — no setup, no API key.</h3>
-                <p className="text-sm text-gray-400 mt-1">
-                  The quickest way to understand LessonForge is to watch a finished lesson it built. Do this:
-                </p>
-
-                <ol className="mt-3 space-y-1.5 text-sm text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">1</span>
-                    <span>Turn on <span className="font-semibold text-amber-300">Demo Mode</span> (top-right toggle — or just tap the button below).</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">2</span>
-                    <span>Open <span className="font-semibold text-white">Create Lesson</span> and pick the <span className="font-semibold text-brand-300">“Immune System”</span> sample.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-brand-500/25 border border-brand-500/40 text-brand-300 text-xs font-bold flex items-center justify-center">3</span>
-                    <span>Watch the plan, previews and finished clips — all pre-loaded, nothing to wait for.</span>
-                  </li>
-                </ol>
-
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <button
-                    onClick={() => { if (!demoMode) handleToggleDemo(); dismissCue() }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors"
-                  >
-                    Turn on Demo Mode →
-                  </button>
-                  <button
-                    onClick={dismissCue}
-                    className="text-sm font-medium text-gray-400 hover:text-gray-200"
-                  >
-                    I&rsquo;ll explore on my own
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
 
         {/* Home */}
         {activeTab === 'home' && (
