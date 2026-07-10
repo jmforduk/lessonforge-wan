@@ -109,9 +109,11 @@ export default function App() {
   const [lessonSubTab, setLessonSubTab]     = useState('library')
   const [demoMode, setDemoMode]             = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('lf_theme') || 'dark')
-  const [showCue, setShowCue] = useState(() => localStorage.getItem('lf_seen_cue_v2') !== '1')
-  const dismissCue = () => { setShowCue(false); localStorage.setItem('lf_seen_cue_v2', '1') }
-  const startDemoFromCue = () => { if (!demoMode) handleToggleDemo(); setActiveTab('home'); dismissCue() }
+  // Cue shows on EVERY startup until the user explicitly opts out (lf_hide_cue='1').
+  const [showCue, setShowCue] = useState(() => localStorage.getItem('lf_hide_cue') !== '1')
+  const closeCue = () => setShowCue(false)                                   // just this session
+  const hideCueForever = () => { setShowCue(false); localStorage.setItem('lf_hide_cue', '1') } // never again
+  const startDemoFromCue = () => { if (!demoMode) handleToggleDemo(); setActiveTab('home'); closeCue() }
   const [playerLesson, setPlayerLesson] = useState(null) // lesson currently open in the player
 
   const [educators, setEducators]             = useState([])
@@ -597,7 +599,7 @@ export default function App() {
           Guides new users: Demo Mode → Dr. Sarah Chen → Immune System. ── */}
       {showCue && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-             onClick={dismissCue}>
+             onClick={closeCue}>
           <div className="relative w-full max-w-md rounded-2xl border border-amber-500/40 bg-gray-950 shadow-2xl overflow-hidden"
                onClick={e => e.stopPropagation()}>
             <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-4 flex items-center gap-3">
@@ -606,7 +608,7 @@ export default function App() {
                 <h2 className="text-lg font-bold text-white leading-tight">Welcome — see it work in 10 seconds</h2>
                 <p className="text-xs text-amber-200/80 mt-0.5">No setup, no API key needed.</p>
               </div>
-              <button onClick={dismissCue} aria-label="Close"
+              <button onClick={closeCue} aria-label="Close"
                 className="ml-auto text-gray-400 hover:text-white text-xl leading-none w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center">×</button>
             </div>
 
@@ -633,9 +635,15 @@ export default function App() {
                   className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold transition-colors">
                   Start the demo →
                 </button>
-                <button onClick={dismissCue}
+                <button onClick={closeCue}
                   className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors">
                   Explore on my own
+                </button>
+              </div>
+              <div className="mt-3 text-center">
+                <button onClick={hideCueForever}
+                  className="text-xs text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
+                  Don&rsquo;t show this again
                 </button>
               </div>
             </div>
