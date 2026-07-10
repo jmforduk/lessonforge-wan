@@ -111,7 +111,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('lf_theme') || 'dark')
   const [showCue, setShowCue] = useState(() => localStorage.getItem('lf_seen_cue_v2') !== '1')
   const dismissCue = () => { setShowCue(false); localStorage.setItem('lf_seen_cue_v2', '1') }
-  const startDemoFromCue = () => { if (!demoMode) handleToggleDemo(); setActiveTab('lessons'); setLessonSubTab('suite'); dismissCue() }
+  const startDemoFromCue = () => { if (!demoMode) handleToggleDemo(); setActiveTab('home'); dismissCue() }
   const [playerLesson, setPlayerLesson] = useState(null) // lesson currently open in the player
 
   const [educators, setEducators]             = useState([])
