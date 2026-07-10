@@ -283,10 +283,16 @@ export default function LessonForm({ settings, onShotPlanGenerated, demoMode, ed
             {educators.map(ed => {
               const selected = selectedEducatorIds.includes(ed.id)
               const initials = ed.name.split(' ').map(n => n[0]).join('').slice(0, 2)
+              // In Demo Mode only Dr. Sarah Chen is selectable; the rest are locked.
+              const demoLocked = demoMode && (ed.name || '').toLowerCase() !== 'dr. sarah chen'
               return (
-                <button key={ed.id} type="button" onClick={() => toggleEducator(ed.id)}
+                <button key={ed.id} type="button" disabled={demoLocked}
+                  onClick={() => { if (!demoLocked) toggleEducator(ed.id) }}
+                  title={demoLocked ? 'Locked \u2014 Demo uses Dr. Sarah Chen' : undefined}
                   className={`relative flex items-center gap-3 rounded-xl border p-2.5 text-left transition-all ${
-                    selected
+                    demoLocked
+                      ? 'border-gray-800/60 bg-gray-900/30 opacity-40 cursor-not-allowed'
+                      : selected
                       ? 'border-brand-600 bg-brand-950/40 ring-1 ring-brand-600/40'
                       : 'border-gray-800 bg-gray-900/60 hover:border-gray-700'
                   }`}>
@@ -307,7 +313,12 @@ export default function LessonForm({ settings, onShotPlanGenerated, demoMode, ed
                       <Check size={11} className="text-white" />
                     </span>
                   )}
-                  {!ed.portrait && (
+                  {demoLocked && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center">
+                      <Lock size={9} className="text-gray-300" />
+                    </span>
+                  )}
+                  {!ed.portrait && !demoLocked && (
                     <span className="absolute bottom-1.5 right-1.5 text-[9px] text-amber-400" title="No portrait — needed for educator likeness">no photo</span>
                   )}
                 </button>
@@ -424,7 +435,7 @@ export default function LessonForm({ settings, onShotPlanGenerated, demoMode, ed
             <span className="text-xs text-amber-500 font-semibold flex items-center gap-1 shrink-0">
               <Sparkles size={12} /> {demoMode ? 'Demo templates:' : 'Samples:'}
             </span>
-            {(demoMode ? EXAMPLES.filter(e => e.demoReady) : EXAMPLES).map((ex, i) => {
+            {(demoMode ? EXAMPLES.filter(e => e.demoVariant === 'immune') : EXAMPLES).map((ex, i) => {
               const active = demoMode && form.demoVariant === (ex.demoVariant || 'neural')
               return (
                 <button key={i} type="button" onClick={() => loadExample(ex)}
