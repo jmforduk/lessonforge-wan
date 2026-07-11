@@ -26,7 +26,7 @@ The whole point of the AI Showrunner track is an autonomous *script → storyboa
 
 | Stage | Model | What it does |
 |-------|-------|--------------|
-| **Direct** | **Qwen-Plus** (OpenAI-compatible chat) | Multi-agent shot planning: curriculum structure, scene continuity, and render-safe cinematic prompts. |
+| **Direct** | **Qwen-Plus** (OpenAI-compatible chat) | A four-role agent crew (Architect · Prompt Engineer · Lighting · Continuity) plans the lesson: curriculum structure, render-safe cinematic prompts, and cross-shot continuity. |
 | **Render** | **Wan 2.7** `t2v` / `i2v` | Text/image-to-video with **native audio** (speaks quoted dialogue) and **reference-to-video** for consistent characters — no separate faceswap/TTS chain needed. |
 
 > Earlier versions of this project used a multi-stage local GPU pipeline (ComfyUI + LTX-2 + ReActor faceswap). **Wan 2.7 replaces that entire chain** — voice, motion, and character consistency are native, so the pipeline is dramatically simpler and fully cloud-hosted.
@@ -58,6 +58,24 @@ The whole point of the AI Showrunner track is an autonomous *script → storyboa
 
 **Design principle:** the DashScope API key lives **only** on the Function Compute backend. The frontend never sees it — it just calls `/api/agent` and `/api/video`.
 
+### The agent crew
+
+The "showrunner" is modelled as a **crew of four specialised agent roles**, declared as `AGENT_ROLES` in `src/lib/generateShotPlan.js`:
+
+| Role | Responsibility |
+|------|----------------|
+| **Curriculum Architect** | Decomposes the brief into pedagogically-sound learning beats — what to teach, in what order, and why. |
+| **Prompt Engineer** | Turns each beat into a concrete, filmable Wan video prompt + the voiceover script. |
+| **Lighting & Cinematography** | Directs camera, movement, lighting and colour so the visual style and tone stay intentional across the lesson. |
+| **Continuity Supervisor (LAF)** | Locks presenter identity, wardrobe and scene continuity across every shot — the **Lesson Action Framework**. |
+
+**Two run modes (`CREW_MODE`):**
+
+- **`'fused'` (current):** all four roles are folded into a single `qwen-plus` call. This keeps the pipeline inside the free-tier token budget and low-latency, while still applying every role's directives to the plan.
+- **`'sequential'` (production / CrewAI):** the *same* role definitions become separate agents in a **CrewAI crew** — one focused Qwen call per role, chained Architect → Prompt Engineer → Lighting → Continuity, each output feeding the next.
+
+Because the roles are already declared as discrete units with their own prompt fragments, moving from single-call to a real multi-agent crew is a **wiring change, not a rewrite** — flip `CREW_MODE` and loop `AGENT_ROLES` (see the `CREW SEAM` in `generateShotPlan.js`).
+
 ---
 
 ## The pipeline
@@ -79,7 +97,7 @@ Playable lesson  +  print-ready PDF lesson pack
 
 ## Features
 
-- **🤖 Qwen multi-agent planning** — curriculum architecture, scene continuity, and prompt engineering, returned as strict JSON.
+- **🤖 Qwen agent crew** — Curriculum Architect, Prompt Engineer, Lighting/Cinematography and Continuity Supervisor (LAF) roles produce the plan as strict JSON. Fused into one call today; pluggable to a sequential CrewAI crew for production (see Architecture).
 - **🎥 Wan 2.7 rendering** — text- and image-to-video with native audio; async create → poll → MP4.
 - **🧑‍🏫 Reusable Educators & Locations** — define presenters (portrait, gender, accent) and settings once; reuse everywhere. `@slug` injection resolves visual descriptions into prompts.
 - **🗣️ Voice control** — educator gender + accent flow into Wan's audio synthesis for consistent vocal delivery.
