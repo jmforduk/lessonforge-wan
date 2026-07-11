@@ -52,6 +52,15 @@ export default function SettingsModal({ settings, onSave, onClose }) {
             <p className="text-xs text-gray-500 mt-1">
               The Function Compute web-function endpoint (holds <code className="text-orange-300">DASHSCOPE_API_KEY</code> and exposes <code>/api/agent</code>, <code>/api/video</code>).
             </p>
+          </div>
+
+          <div>
+            <label className="label">Access token <span className="text-gray-500 font-normal">(optional)</span></label>
+            <input className="input" value={form.accessToken || ''} onChange={e => set('accessToken', e.target.value)}
+              placeholder="shared secret — leave blank if backend is open" />
+            <p className="text-xs text-gray-500 mt-1">
+              Sent as <code>X-Access-Token</code> on every backend call. Set the same value as the backend&apos;s <code className="text-orange-300">ACCESS_TOKEN</code> env var to stop strangers using your quota. Leave blank to keep the backend open.
+            </p>
 
             {form.comfyEndpoint && (
               <div className="mt-2">

@@ -16,6 +16,7 @@ import http from 'node:http'
 
 const PORT = process.env.FC_SERVER_PORT || process.env.PORT || 9000
 const KEY = process.env.DASHSCOPE_API_KEY || ''
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN || '' // optional shared secret; if set, /api/* requires matching X-Access-Token
 const CHAT_BASE = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
 const WAN_BASE  = 'https://dashscope-intl.aliyuncs.com/api/v1'
 
@@ -81,6 +82,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (!KEY) return json(res, 500, { error: 'DASHSCOPE_API_KEY not set on the server.' })
+
+    // Optional shared-secret gate: only /api/* is protected; /healthz stays open.
+    if (ACCESS_TOKEN && path.startsWith('/api/')) {
+      const sent = req.headers['x-access-token'] || ''
+      if (sent !== ACCESS_TOKEN) return json(res, 401, { error: 'Unauthorized — bad or missing access token.' })
+    }
 
     if (path === '/api/agent' && req.method === 'POST') {
       const body = await readBody(req)

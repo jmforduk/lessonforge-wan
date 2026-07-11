@@ -137,9 +137,22 @@ function narrationClause(educator, voiceover) {
 }
 
 // ── Backend calls (via Alibaba Cloud FC proxy that holds the key) ─────────────
+
+// Optional shared-secret sent to the backend so a stranger who learns the URL
+// can't burn the DashScope quota. Read from Settings (localStorage lf_settings).
+// If unset, no header is sent and the backend stays open (dev/demo friendly).
+export function authHeaders() {
+  try {
+    const s = JSON.parse(localStorage.getItem('lf_settings') || '{}')
+    const t = (s.accessToken || '').trim()
+    return t ? { 'X-Access-Token': t } : {}
+  } catch { return {} }
+}
+const jsonAuth = () => ({ 'Content-Type': 'application/json', ...authHeaders() })
+
 async function postVideo(backend, body) {
   const r = await fetch(`${backend}/api/video`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST', headers: jsonAuth(), body: JSON.stringify(body),
   })
   const data = await r.json()
   if (!r.ok || !data?.output?.task_id) {
@@ -156,7 +169,7 @@ async function pollVideo(backend, taskId, onStatus, expectSeconds) {
     await sleep(n === 0 ? 4000 : 8000); n++
     let data
     try {
-      const r = await fetch(`${backend}/api/video/${taskId}`)
+      const r = await fetch(`${backend}/api/video/${taskId}`, { headers: authHeaders() })
       data = await r.json()
     } catch (e) { console.warn('poll blip', e.message); continue }
     const st = (data?.status || '').toUpperCase()
@@ -178,7 +191,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)) }
 // ── Text-to-image (CHEAP review still — real image, not a video) ─────────────
 async function postImage(backend, body) {
   const r = await fetch(`${backend}/api/image`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST', headers: jsonAuth(), body: JSON.stringify(body),
   })
   const data = await r.json()
   if (!r.ok || !data?.output?.task_id) {
@@ -195,7 +208,7 @@ async function pollImage(backend, taskId, onStatus) {
     await sleep(n === 0 ? 2500 : 4000); n++
     let data
     try {
-      const r = await fetch(`${backend}/api/image/${taskId}`)
+      const r = await fetch(`${backend}/api/image/${taskId}`, { headers: authHeaders() })
       data = await r.json()
     } catch (e) { console.warn('img poll blip', e.message); continue }
     const st = (data?.status || '').toUpperCase()
@@ -265,7 +278,7 @@ const SOLO_PRESENTER_NEG = 'two people, second person, duplicate person, twins, 
 // NEW still of the SAME subject. Synchronous — returns { imageUrl } directly.
 async function postImageEdit(backend, body) {
   const r = await fetch(`${backend}/api/image-edit`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST', headers: jsonAuth(), body: JSON.stringify(body),
   })
   const data = await r.json()
   if (!r.ok || !data?.imageUrl) {
@@ -389,7 +402,7 @@ export async function renderStill(shot, educator, lessonSlug, backendBase, onSta
 
   onStatus?.('building', 'Building still request…')
   try {
-    const ping = await fetch(`${backend}/healthz`); const h = await ping.json()
+    const ping = await fetch(`${backend}/healthz`, { headers: authHeaders() }); const h = await ping.json()
     if (!h?.keyPresent) throw new Error('backend has no DASHSCOPE_API_KEY configured')
   } catch (e) {
     throw new Error(`Couldn't reach the backend at ${backend}. (${e.message})`)
@@ -517,7 +530,7 @@ export async function renderShot(shot, educator, lessonSlug, backendBase, onStat
   // Preflight the backend so "nothing happened" becomes a clear error.
   onStatus?.('uploading', `Connecting to backend (${backend})…`)
   try {
-    const ping = await fetch(`${backend}/healthz`)
+    const ping = await fetch(`${backend}/healthz`, { headers: authHeaders() })
     const h = await ping.json()
     if (!h?.keyPresent) throw new Error('backend has no DASHSCOPE_API_KEY configured')
   } catch (e) {
@@ -581,7 +594,7 @@ export async function testWanBackend(backendBase) {
   const backend = (backendBase || '').replace(/\/$/, '')
   if (!backend) return { ok: false, checks: [{ label: 'Backend URL set', ok: false, detail: 'Enter your Alibaba Cloud backend URL.' }] }
   try {
-    const r = await fetch(`${backend}/healthz`)
+    const r = await fetch(`${backend}/healthz`, { headers: authHeaders() })
     const h = await r.json()
     checks.push({ label: 'Backend reachable', ok: r.ok, detail: h?.cloud || '' })
     checks.push({ label: 'DASHSCOPE key configured on server', ok: !!h?.keyPresent, detail: h?.keyPresent ? 'Qwen + Wan ready' : 'Key missing on backend' })

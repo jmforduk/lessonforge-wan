@@ -28,6 +28,8 @@
  * are concatenated into one prompt; in a CrewAI deployment each becomes its own
  * agent with this fragment as its backstory/goal.
  */
+import { authHeaders } from './wan.js'
+
 export const AGENT_ROLES = [
   {
     id: 'architect',
@@ -139,7 +141,7 @@ Generate ${estimateShotCount(duration)} shots. Make the video prompts highly det
 
   const res = await fetch(`${backend}/api/agent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({
       model,
       messages: [
